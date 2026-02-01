@@ -199,6 +199,12 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8000
 - Descriptive commit messages
 - User runs git commands manually (don't auto-push)
 
+### Development Log (DEVLOG.md)
+- **Update DEVLOG.md after each meaningful milestone** (new feature, TDD cycle, architecture decision)
+- Log categories: `#tdd`, `#ai-pairing`, `#architecture`, `#langgraph`, `#rag`, `#trello-migration`
+- Each entry should capture: what happened, what design decisions were forced, and key insights
+- This log is source material for a LinkedIn article about TDD-driven development with Claude Code
+
 ### Code Style
 - Backend: Black, isort, flake8
 - Frontend: ESLint, Prettier

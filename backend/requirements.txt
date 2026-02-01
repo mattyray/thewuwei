@@ -1,0 +1,48 @@
+# Django
+Django==6.0.1
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+dj-database-url==3.1.0
+
+# Database
+psycopg2-binary==2.9.11
+
+# Channels (WebSocket)
+channels==4.3.2
+channels-redis==4.3.0
+daphne==4.2.1
+
+# Celery
+celery==5.6.2
+redis==7.1.0
+django-celery-beat==2.8.1
+
+# AI
+langchain-anthropic==1.3.1
+langgraph==1.0.7
+langsmith==0.6.7
+openai==2.16.0
+
+# pgvector (includes Django support via pgvector.django)
+pgvector==0.4.2
+
+# Auth
+django-allauth==65.14.0
+
+# Email
+resend==2.21.0
+
+# Testing
+pytest==9.0.2
+pytest-django==4.11.1
+pytest-asyncio==1.1.0
+pytest-cov==7.0.0
+factory-boy==3.3.3
+
+# Code quality
+black==26.1.0
+isort==7.0.0
+flake8==7.3.0
+
+# Utils
+python-dotenv==1.2.1
