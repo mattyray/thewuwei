@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from apps.users.models import User
 
@@ -18,3 +20,9 @@ def other_user(db) -> User:
         email="other@example.com",
         password="testpass123",
     )
+
+
+@pytest.fixture
+def today() -> date:
+    """Today's date for test consistency."""
+    return date.today()

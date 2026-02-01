@@ -28,6 +28,10 @@ INSTALLED_APPS = [
     "django_celery_beat",
     # Local apps
     "apps.users",
+    "apps.journal",
+    "apps.todos",
+    "apps.mantras",
+    "apps.chat",
 ]
 
 MIDDLEWARE = [

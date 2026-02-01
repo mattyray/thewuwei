@@ -59,4 +59,39 @@ The `test_default_reminder_time` test initially failed because the model used `d
 
 ---
 
+## 2026-02-01 — Core Data Models (TDD) `#tdd` `#architecture`
+
+### What happened
+- Wrote 41 new tests across 4 test files BEFORE writing any model code
+- Implemented 7 models across 4 apps: JournalEntry, DailyCheckin, GratitudeEntry, WeeklySummary, Todo, Mantra, ChatMessage
+- All 55 tests passing (14 user + 41 new) — all green on first model implementation run
+
+### Apps created
+
+| App | Models | Tests |
+|-----|--------|-------|
+| `journal` | JournalEntry, DailyCheckin, GratitudeEntry, WeeklySummary | 17 |
+| `todos` | Todo | 8 |
+| `mantras` | Mantra | 7 |
+| `chat` | ChatMessage | 5 |
+
+### What the tests drove
+
+**unique_together constraints:** Every model that represents a daily record (JournalEntry, DailyCheckin, GratitudeEntry) has `unique_together = ["user", "date"]`. The tests for "can't have two entries on the same day" directly forced this constraint. But the tests also verify "two different users CAN have entries on the same date" — proving the constraint scopes correctly.
+
+**Multi-tenancy at model level:** Every app has explicit multi-tenancy tests (`test_users_have_separate_*`). These tests filter by user and assert the count is 1, proving that `user` ForeignKey + query filtering works. This pattern will compound when we add API viewsets — the API tests will verify the same isolation at the HTTP level.
+
+**Ordering contracts:**
+- JournalEntry: `-date` (newest first) — makes sense for reading history
+- ChatMessage: `created_at` (oldest first) — chronological conversation flow
+- Todo: `completed, due_date, -created_at` — incomplete first, then by urgency
+- Mantra: `order, created_at` — user-controlled ordering with stable fallback
+
+**JSON fields:** GratitudeEntry.items and WeeklySummary.themes use `JSONField(default=list)`. Tests verify they round-trip as Python lists through the database, and that the default is an empty list (not None).
+
+### TDD moment
+All 41 new tests passed on the first run after writing the models. This might seem like "the tests didn't catch anything" — but the real value was that writing the tests first forced every design decision to be explicit. The ordering, the constraints, the defaults, the field types — all decided in the test file before a single line of model code was written. The model code was just transcription of decisions already made.
+
+---
+
 <!-- New entries will be added above this line -->
