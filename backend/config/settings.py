@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -172,3 +173,13 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "create-daily-checkins": {
+        "task": "apps.journal.tasks.create_daily_checkins",
+        "schedule": crontab(hour=0, minute=0),  # Midnight UTC
+    },
+    "reset-rate-limits": {
+        "task": "apps.journal.tasks.reset_rate_limits",
+        "schedule": crontab(hour=0, minute=5),  # 00:05 UTC
+    },
+}
