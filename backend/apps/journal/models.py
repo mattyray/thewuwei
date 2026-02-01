@@ -51,6 +51,7 @@ class GratitudeEntry(models.Model):
 
     class Meta:
         unique_together = ["user", "date"]
+        ordering = ["-date"]
         verbose_name_plural = "gratitude entries"
 
     def __str__(self) -> str:

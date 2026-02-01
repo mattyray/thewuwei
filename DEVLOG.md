@@ -94,4 +94,55 @@ All 41 new tests passed on the first run after writing the models. This might se
 
 ---
 
+## 2026-02-01 — REST API Layer (TDD) `#tdd` `#architecture`
+
+### What happened
+- Wrote 52 new API tests BEFORE writing any serializer/viewset code
+- Implemented serializers, viewsets, URL routing for all endpoints
+- Fixed 2 categories of test failures, then all 107 tests green
+
+### Endpoints implemented
+
+| Endpoint | Methods | Purpose |
+|----------|---------|---------|
+| `/api/auth/me/` | GET, PATCH | Current user profile |
+| `/api/journal/` | GET, POST | List/create journal entries |
+| `/api/journal/today/` | GET | Today's entry |
+| `/api/journal/{date}/` | GET | Entry by date |
+| `/api/journal/{id}/` | PATCH | Update entry |
+| `/api/checkins/today/` | GET | Today's checkin (auto-creates) |
+| `/api/checkins/meditation/` | POST | Log meditation |
+| `/api/gratitude/` | GET, POST | List/create gratitude |
+| `/api/gratitude/today/` | GET | Today's gratitude |
+| `/api/todos/` | GET, POST | List/create todos |
+| `/api/todos/{id}/` | PATCH, DELETE | Update/delete todo |
+| `/api/todos/{id}/complete/` | POST | Mark todo complete |
+| `/api/mantras/` | GET, POST | List/create mantras |
+| `/api/mantras/{id}/` | PATCH, DELETE | Update/delete mantra |
+| `/api/mantras/reorder/` | POST | Reorder mantras |
+
+### What the tests caught
+
+**Pagination missing:** Tests expected `response.data["results"]` (paginated format) but got a plain list. The test forced us to configure `DEFAULT_PAGINATION_CLASS` in DRF settings. Without the test, we might not have noticed until the frontend was built.
+
+**Date auto-defaulting broken:** Tests for `POST /api/journal/` without a `date` field returned 400. DRF's ModelSerializer makes `date` required because the model field doesn't allow blank/null. The test forced us to explicitly declare `date = DateField(required=False, default=None)` on the serializer with auto-defaulting in `create()`.
+
+**Security test: `test_cannot_set_arbitrary_fields`:** Proved that users can't escalate privileges via `PATCH /api/auth/me/` with `{"is_superuser": true}`. The UserSerializer's explicit `fields` list + `read_only_fields` prevent this — but the test proves it.
+
+### Multi-tenancy at HTTP level
+Every resource has at least one test proving user isolation:
+- List endpoints return 0 results for other users' data
+- Detail endpoints return 404 (not 403) for other users' resources — don't even reveal existence
+- Complete/delete actions on other users' resources return 404
+
+### Key pattern
+```python
+# Every viewset follows this pattern — user scoping via get_queryset
+def get_queryset(self):
+    return Model.objects.filter(user=self.request.user)
+```
+This single line, repeated in every viewset, is what the multi-tenancy tests enforce.
+
+---
+
 <!-- New entries will be added above this line -->
