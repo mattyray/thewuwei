@@ -195,4 +195,59 @@ The pure function architecture paid off — with well-defined inputs and outputs
 
 ---
 
+## 2026-02-01 — WebSocket Consumer + Celery Tasks (TDD) `#tdd` `#architecture` `#ai-pairing`
+
+### What happened
+- Wrote 6 WebSocket tests and 5 Celery task tests BEFORE implementation
+- Implemented `ChatConsumer` (async WebSocket consumer with auth, persistence, agent bridge)
+- Wired up ASGI routing with `AuthMiddlewareStack` + `URLRouter`
+- Implemented 2 Celery tasks: `create_daily_checkins`, `reset_rate_limits`
+- Hit async transaction isolation bug in tests, fixed, all 149 tests passing
+
+### Tests written
+
+| Test | What it proved |
+|------|---------------|
+| `test_authenticated_user_connects` | WebSocket accepts authenticated users |
+| `test_unauthenticated_rejected` | AnonymousUser gets connection denied |
+| `test_user_message_saved` | Sending a message persists to ChatMessage |
+| `test_assistant_response_saved` | Both user + assistant messages saved (count=2) |
+| `test_complete_message_includes_content` | Response includes type="complete" + content |
+| `test_messages_scoped_to_user` | User A's messages don't appear in User B's history |
+| `test_creates_checkins_for_all_users` | Daily task creates checkins for every active user |
+| `test_does_not_duplicate_checkins` | Idempotent — won't create if one exists |
+| `test_creates_for_inactive_check` | Only active users get checkins |
+| `test_resets_reflection_count` | Rate limit counter resets to 0 |
+| `test_updates_reset_date` | Reset date updates to today |
+
+### Architecture: WebSocket consumer design
+
+The `ChatConsumer` is thin — it handles auth, persistence, and response formatting. The actual intelligence lives in the LangGraph agent:
+
+```
+WebSocket message → save user message → call agent → save response → send back
+```
+
+Key design choice: `get_agent_response()` is a separate method specifically so tests can mock it. The real implementation calls `agent.invoke()` via `database_sync_to_async`, but tests replace it with a simple `AsyncMock(return_value="...")`. This lets us test the WebSocket plumbing without needing an LLM.
+
+### TDD moment: async transaction isolation
+
+**The bug:** Three WebSocket message tests failed with `UniqueViolation` — duplicate key on `users_user.email`. The standard `user` fixture creates `test@example.com`, but `database_sync_to_async` runs in a separate thread. Django's test transaction rollback doesn't cross thread boundaries, so users from one test leaked into the next.
+
+**The fix the tests demanded:**
+1. `pytestmark = pytest.mark.django_db(transaction=True)` — use real transactions with proper cleanup
+2. UUID-based unique emails: `f"test-{uuid.uuid4().hex[:8]}@example.com"` — no collisions
+
+This is a subtle Django Channels gotcha. Without TDD catching it early, this would have been a painful debugging session in a larger codebase. The failing test told us exactly what was wrong — the fix was mechanical.
+
+### Celery tasks: simplicity wins
+
+Both Celery tasks are intentionally simple:
+- `create_daily_checkins`: Loop through active users, `get_or_create` for today. Idempotent by design.
+- `reset_rate_limits`: Bulk `update()` — resets everyone at once. No per-user loop needed.
+
+The test for inactive users (`test_creates_for_inactive_check`) drove the `.filter(is_active=True)` clause — without it, deactivated accounts would still get daily checkins.
+
+---
+
 <!-- New entries will be added above this line -->
