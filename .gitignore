@@ -1,0 +1,54 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+.venv/
+venv/
+*.whl
+
+# Django
+*.sqlite3
+staticfiles/
+media/
+htmlcov/
+.coverage
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+
+# PWA generated
+frontend/public/sw.js
+frontend/public/workbox-*.js
+frontend/public/sw.js.map
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Misc
+*.log
+*.pid
+celerybeat-schedule
