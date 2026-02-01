@@ -7,4 +7,7 @@ urlpatterns = [
     path("api/", include("apps.journal.urls")),
     path("api/", include("apps.todos.urls")),
     path("api/", include("apps.mantras.urls")),
+    # allauth (required for OAuth callbacks even in headless mode)
+    path("accounts/", include("allauth.urls")),
+    path("_allauth/", include("allauth.headless.urls")),
 ]

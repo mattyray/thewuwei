@@ -250,4 +250,56 @@ The test for inactive users (`test_creates_for_inactive_check`) drove the `.filt
 
 ---
 
+## 2026-02-01 — Auth Flows + Google OAuth (TDD) `#tdd` `#architecture`
+
+### What happened
+- Wrote 18 auth tests BEFORE implementation (16 custom auth + 2 allauth headless)
+- Implemented register, login, logout, CSRF endpoints
+- Configured django-allauth headless mode for Google OAuth
+- Hit multi-backend `login()` bug, fixed, all 167 tests passing
+
+### Endpoints implemented
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/auth/register/` | POST | Email/password signup + auto-login |
+| `/api/auth/login/` | POST | Session-based login |
+| `/api/auth/logout/` | POST | Session clear (idempotent) |
+| `/api/auth/csrf/` | GET | CSRF token for SPA |
+| `/_allauth/app/v1/*` | Various | allauth headless API (Google OAuth) |
+
+### Architecture: dual auth strategy
+
+The app has two auth paths:
+1. **Custom endpoints** (register/login/logout) — simple, tested, session-based. These handle the common case.
+2. **allauth headless** — handles Google OAuth. The SPA will use `@react-oauth/google` to get a Google ID token client-side, then POST it to `/_allauth/app/v1/auth/provider/token`. allauth verifies with Google, creates/logs in the user, returns a session token.
+
+Since the frontend (Netlify) and backend (Railway) will be on different domains, allauth is configured with the "app" client — uses `X-Session-Token` headers instead of cookies. `SessionAuthentication` still works for same-origin (development).
+
+### TDD moment: multi-backend login
+
+**The bug:** After adding allauth's `AuthenticationBackend` alongside Django's `ModelBackend`, the register endpoint's `login(request, user)` call failed with:
+
+> "You have multiple authentication backends configured and therefore must provide the `backend` argument"
+
+Django's `login()` doesn't know which backend authenticated the user when there are multiple backends. The `authenticate()` function sets `user.backend` automatically, but our register flow creates the user directly (no `authenticate()` call).
+
+**The fix:** `login(request, user, backend="django.contrib.auth.backends.ModelBackend")` — explicitly tell Django which backend to attribute the login to. The login endpoint didn't have this issue because `authenticate()` already sets `user.backend`.
+
+### Dependency caught by TDD
+
+allauth's Google provider requires `PyJWT[crypto]` for JWT token verification — not declared as a hard dependency. The import error surfaced immediately when running tests with allauth configured. Added `PyJWT[crypto]==2.10.1` to requirements.
+
+### What the tests proved
+
+- Registration auto-logs-in the user (session set immediately)
+- Duplicate email returns 400 (not 500)
+- Weak passwords rejected by Django's validators
+- Logout is idempotent (calling it when not logged in returns 200)
+- CSRF token is accessible to JavaScript (`CSRF_COOKIE_HTTPONLY = False`)
+- allauth headless config endpoint lists Google as a provider
+- All 11 existing auth-required endpoints still reject unauthenticated requests
+
+---
+
 <!-- New entries will be added above this line -->

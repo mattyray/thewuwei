@@ -28,6 +28,7 @@ pgvector==0.4.2
 
 # Auth
 django-allauth==65.14.0
+PyJWT[crypto]==2.10.1
 
 # Email
 resend==2.21.0
