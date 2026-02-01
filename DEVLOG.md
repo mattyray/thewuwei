@@ -145,4 +145,54 @@ This single line, repeated in every viewset, is what the multi-tenancy tests enf
 
 ---
 
+## 2026-02-01 — LangGraph Agent + Tools (TDD) `#tdd` `#langgraph` `#ai-pairing`
+
+### What happened
+- Wrote 31 agent tool tests BEFORE writing any tool code
+- Implemented 10 agent tools as pure business logic functions
+- Created system prompt with Taoist therapeutic personality
+- Built LangGraph graph with tool orchestration (model → tools → model loop)
+- All 138 tests passing (31 new + 107 existing)
+
+### Tools implemented
+
+| Tool | What it does | Key test |
+|------|-------------|----------|
+| `log_meditation` | Creates/updates DailyCheckin | Auto-creates checkin if missing |
+| `save_gratitude_list` | Saves items, marks checkin | Replaces existing (not duplicates) |
+| `save_journal_entry` | Saves entry, marks checkin | Appends to existing entry |
+| `create_todo` | Creates with optional date | Parses "today"/"tomorrow" naturally |
+| `complete_todo` | Fuzzy search + complete | Returns options if ambiguous |
+| `get_todos` | Lists user's todos | Excludes completed by default |
+| `get_recent_entries` | Journal entries by timeframe | Respects user scoping |
+| `get_mantras` | Lists user's mantras | Ordered by user-defined order |
+| `add_mantra` | Creates new mantra | Scoped to user |
+| `get_todays_status` | Meditation/gratitude/journal | Isolated per user |
+
+### Architecture decision: tools as pure functions
+
+The tools are **not** LangChain `@tool` decorated functions that the LLM calls directly. Instead:
+
+1. **Pure business logic** lives in `agent/tools.py` — plain Python functions that take a `user` and args, return dicts. These are what the tests exercise.
+2. **LangChain tool wrappers** live in `agent/graph.py` — `@tool` decorated stubs that define the schema the LLM sees.
+3. **The graph's `execute_tools` node** bridges them — it receives tool calls from the LLM, injects the `user` from config, and calls the real function.
+
+This separation means:
+- Tools are testable without mocking any LLM
+- The LLM tool schema is decoupled from the implementation
+- User injection happens in one place (the graph node), not scattered across tools
+
+### TDD moments
+
+**`test_complete_todo_ambiguous`:** This test forced the design of "what happens when 'call' matches both 'Call the doctor' and 'Call mom'?" Instead of guessing, the tool returns `{"matches": [...]}` so the agent can ask the user to clarify. The test drove an explicit UX decision.
+
+**`test_save_journal_appends_to_existing`:** Should a second journal message overwrite or append? The test decided: **append**. The user might journal multiple times throughout the day, and we shouldn't lose the morning entry when they write in the evening.
+
+**`test_create_todo_with_relative_date_tomorrow`:** Natural language date parsing ("tomorrow", "today") was tested before being implemented. The test defined the contract: `due_date="tomorrow"` → `date.today() + timedelta(days=1)`.
+
+### 31/31 tool tests passed on first run
+The pure function architecture paid off — with well-defined inputs and outputs, the implementation was straightforward transcription of the test contracts.
+
+---
+
 <!-- New entries will be added above this line -->
