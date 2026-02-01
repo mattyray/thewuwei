@@ -268,6 +268,69 @@ Import script parses Trello JSON export and populates the database with proper u
 
 ---
 
+## Current Status
+
+### Backend — COMPLETE (167 tests, all passing)
+
+| Milestone | Tests | What was built |
+|-----------|-------|----------------|
+| User model + Docker | 14 | Custom email-based User, Docker Compose (pgvector, redis, backend, celery) |
+| Core data models | 55 | JournalEntry, DailyCheckin, GratitudeEntry, WeeklySummary, Todo, Mantra, ChatMessage |
+| REST API | 107 | All CRUD endpoints, pagination, multi-tenancy scoping, auth-required on all routes |
+| LangGraph agent | 138 | 10 tools as pure functions, agent graph with tool orchestration, Taoist system prompt |
+| WebSocket + Celery | 149 | ChatConsumer (auth, persistence, agent bridge), daily checkin + rate limit tasks |
+| Auth flows | 167 | Register, login, logout, CSRF, django-allauth headless for Google OAuth |
+
+**Run backend tests:** `docker-compose run --rm backend pytest`
+
+### Backend API Endpoints (all implemented and tested)
+
+| Endpoint | Methods |
+|----------|---------|
+| `/api/auth/register/` | POST |
+| `/api/auth/login/` | POST |
+| `/api/auth/logout/` | POST |
+| `/api/auth/csrf/` | GET |
+| `/api/auth/me/` | GET, PATCH |
+| `/api/journal/` | GET, POST |
+| `/api/journal/{id}/` | GET, PATCH, DELETE |
+| `/api/journal/today/` | GET |
+| `/api/journal/{date}/` | GET |
+| `/api/checkins/today/` | GET |
+| `/api/checkins/meditation/` | POST |
+| `/api/gratitude/` | GET, POST |
+| `/api/gratitude/{id}/` | GET, PATCH, DELETE |
+| `/api/gratitude/today/` | GET |
+| `/api/todos/` | GET, POST |
+| `/api/todos/{id}/` | GET, PATCH, DELETE |
+| `/api/todos/{id}/complete/` | POST |
+| `/api/mantras/` | GET, POST |
+| `/api/mantras/{id}/` | GET, PATCH, DELETE |
+| `/api/mantras/reorder/` | POST |
+| `ws://localhost:8000/ws/chat/` | WebSocket |
+| `/_allauth/app/v1/*` | allauth headless (Google OAuth) |
+
+### WebSocket Protocol
+
+Client sends: `{"type": "message", "content": "Did my meditation"}`
+Server responds: `{"type": "complete", "content": "Logged. 15 minutes of stillness..."}`
+
+### Frontend — NOT STARTED
+
+The `frontend/` directory is empty. Next step is building the Next.js app.
+
+**Tech:** Next.js 15, React 19, TypeScript, Tailwind CSS, TanStack Query
+**Pages needed:** Login, Register, Dashboard (chat + today panel + todos + mantras), History, Settings
+**Approach:** Build components first, then add Playwright E2E tests (no component-level TDD for frontend)
+**Docker:** Frontend service not yet added to docker-compose.yml
+
+### Remaining after frontend
+- RAG/embeddings (pgvector semantic search for pattern analysis)
+- Trello data import script
+- Deployment (Railway + Netlify)
+
+---
+
 ## Portfolio Goals
 
 This project demonstrates:
