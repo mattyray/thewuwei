@@ -74,7 +74,9 @@ class TestUserDefaults:
         assert user.timezone == "America/New_York"
 
     def test_default_reminder_time(self, user):
-        assert str(user.daily_reminder_time) == "20:00:00"
+        from datetime import time
+
+        assert user.daily_reminder_time == time(20, 0)
 
     def test_default_reminder_enabled(self, user):
         assert user.reminder_enabled is True

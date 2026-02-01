@@ -1,3 +1,5 @@
+from datetime import time
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -10,7 +12,7 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
     timezone = models.CharField(max_length=50, default="America/New_York")
-    daily_reminder_time = models.TimeField(default="20:00")
+    daily_reminder_time = models.TimeField(default=time(20, 0))
     reminder_enabled = models.BooleanField(default=True)
     anthropic_api_key = models.CharField(max_length=255, blank=True, default="")
 
