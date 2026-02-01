@@ -155,6 +155,12 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
 ).split(",")
 CSRF_COOKIE_HTTPONLY = False  # JS needs to read the CSRF token
 
+# Session cookies — SameSite=None needed for cross-origin WebSocket auth in dev
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = False
+
 # Channels
 CHANNEL_LAYERS = {
     "default": {

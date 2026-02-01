@@ -10,11 +10,15 @@ Handles:
 """
 
 import json
+import logging
+import traceback
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from .models import ChatMessage
+
+logger = logging.getLogger(__name__)
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -43,17 +47,24 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         # Save user message
         await self.save_message("user", user_content)
 
-        # Get agent response
-        response_text = await self.get_agent_response(user_content)
+        try:
+            # Get agent response
+            response_text = await self.get_agent_response(user_content)
 
-        # Save assistant message
-        await self.save_message("assistant", response_text)
+            # Save assistant message
+            await self.save_message("assistant", response_text)
 
-        # Send complete response
-        await self.send_json({
-            "type": "complete",
-            "content": response_text,
-        })
+            # Send complete response
+            await self.send_json({
+                "type": "complete",
+                "content": response_text,
+            })
+        except Exception as e:
+            logger.error("Agent error: %s\n%s", e, traceback.format_exc())
+            await self.send_json({
+                "type": "complete",
+                "content": f"Sorry, something went wrong: {e}",
+            })
 
     async def get_agent_response(self, user_message: str) -> str:
         """Call the LangGraph agent and return the response text.
