@@ -39,7 +39,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-end gap-2 border-t border-border bg-bg-primary p-3"
+      className="flex items-end gap-2 p-3"
     >
       <textarea
         ref={textareaRef}
@@ -47,7 +47,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
-        placeholder="Type a message..."
+        placeholder="What's on your mind?"
         rows={1}
         disabled={disabled}
         className="flex-1 resize-none rounded-xl border border-border bg-bg-secondary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent-primary transition-colors"

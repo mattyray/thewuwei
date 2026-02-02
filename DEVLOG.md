@@ -346,4 +346,33 @@ The whole app premise is "just talk to it." If a user says "I need to call the d
 
 ---
 
+## 2026-02-02 — Frontend: Daily Page Restructure `#architecture` `#ai-pairing`
+
+### What happened
+- Completely replaced the chat+sidebar dashboard layout with a single-column daily page
+- Built 9 new components in `components/daily/`: day-header, meditation-row, gratitude-section, journal-section, todos-section, chat-transcript, day-section, recent-days-feed, calendar-picker
+- Created main `DailyPage` component with sticky chat input, live conversation area, today's structured sections, and recent days feed
+- Added `/day/[date]` route for viewing any past date via calendar picker
+- Updated header: Dashboard→Today, removed History link, added calendar icon, made header sticky
+- Deleted 5 deprecated components: dashboard.tsx, chat.tsx, today-panel.tsx, todos-panel.tsx, mantras-panel.tsx
+- Updated `useChat` hook to load persisted messages on mount + invalidate daily queries
+
+### Architecture decisions
+
+**Single scrollable column vs split pane:** The old layout had chat on the left and panels on the right, which broke on mobile (elements overlapping). The new layout is a single vertical scroll on all screen sizes. This inherently fixes mobile since there are no competing scroll regions or z-index conflicts.
+
+**Chat always visible for today:** Today's conversation renders directly below the sticky input, not inside a collapsible section. Past days' transcripts are collapsible. This preserves the "chat IS the app" feel while keeping the daily review clean.
+
+**Todos are daily, not persistent:** Each day section shows only the todos created that day. No rollover, no nagging about old incomplete items. The user explicitly said these are rough plans, not a backlog.
+
+**Calendar picker is custom:** Built a 150-line calendar component instead of adding react-day-picker (~10KB). The picker disables future dates and navigates to `/day/YYYY-MM-DD` or `/` for today.
+
+### What was deleted and why
+The old `Dashboard` component was a `flex-col lg:flex-row` split that stacked chat and three panel components side by side. The panels (`TodayPanel`, `TodosPanel`, `MantrasPanel`) each made their own API calls and rendered independently. The new design replaces this with a single aggregate API call (`/api/daily/{date}/`) that returns all data for a day, rendered by composable section components. This reduces both complexity and network requests.
+
+### Key learning
+The design conversation with the user drove every decision: they look back at recent days to plan today (so recent days feed below today), todos are disposable (so no rollover), they ramble and want clean output (so smart agent parsing), and they want to see full transcripts for any day (so chat history REST API). Starting from user workflow rather than feature lists produced a much more coherent architecture.
+
+---
+
 <!-- New entries will be added above this line -->
