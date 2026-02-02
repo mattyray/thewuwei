@@ -1,14 +1,14 @@
 "use client";
 
 import { AuthGuard } from "@/components/auth-guard";
-import { Dashboard } from "@/components/dashboard";
+import { DailyPage } from "@/components/daily-page";
 import { Header } from "@/components/layout/header";
 
 export default function Home() {
   return (
     <AuthGuard>
       <Header />
-      <Dashboard />
+      <DailyPage />
     </AuthGuard>
   );
 }
