@@ -7,19 +7,6 @@ import type { ChatMessage } from "@/types/api";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
 
-function createWebSocket(
-  onMessage: (data: { type: string; content: string }) => void,
-  onOpen: () => void,
-  onClose: () => void
-): WebSocket {
-  const ws = new WebSocket(`${WS_URL}/ws/chat/`);
-  ws.onopen = onOpen;
-  ws.onmessage = (event) => onMessage(JSON.parse(event.data));
-  ws.onclose = onClose;
-  ws.onerror = () => ws.close();
-  return ws;
-}
-
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -35,34 +22,47 @@ export function useChat() {
     function connect() {
       if (unmounted) return;
 
-      const ws = createWebSocket(
-        (data) => {
-          if (data.type === "complete") {
-            setMessages((prev) => [
-              ...prev,
-              { role: "assistant", content: data.content },
-            ]);
-            setIsWaiting(false);
+      const ws = new WebSocket(`${WS_URL}/ws/chat/`);
 
-            queryClient.invalidateQueries({ queryKey: ["checkin"] });
-            queryClient.invalidateQueries({ queryKey: ["todos"] });
-            queryClient.invalidateQueries({ queryKey: ["mantras"] });
-            queryClient.invalidateQueries({ queryKey: ["gratitude"] });
-          }
-        },
-        () => {
-          setIsConnected(true);
-          retries = 0;
-        },
-        () => {
-          setIsConnected(false);
-          wsRef.current = null;
-          if (unmounted) return;
-          const delay = Math.min(1000 * 2 ** retries, 30000);
-          retries += 1;
-          reconnectTimeout = setTimeout(connect, delay);
+      ws.onopen = () => {
+        // Guard against stale WS (Strict Mode closes the first one)
+        if (wsRef.current !== ws) return;
+        setIsConnected(true);
+        retries = 0;
+      };
+
+      ws.onmessage = (event) => {
+        if (wsRef.current !== ws) return;
+        const data = JSON.parse(event.data);
+        if (data.type === "complete") {
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: data.content },
+          ]);
+          setIsWaiting(false);
+
+          queryClient.invalidateQueries({ queryKey: ["checkin"] });
+          queryClient.invalidateQueries({ queryKey: ["todos"] });
+          queryClient.invalidateQueries({ queryKey: ["mantras"] });
+          queryClient.invalidateQueries({ queryKey: ["gratitude"] });
         }
-      );
+      };
+
+      ws.onclose = () => {
+        // Only handle close if this is still the active WS.
+        // Prevents stale WS1.onclose from clobbering active WS2.
+        if (wsRef.current !== ws) return;
+        setIsConnected(false);
+        wsRef.current = null;
+        if (unmounted) return;
+        const delay = Math.min(1000 * 2 ** retries, 30000);
+        retries += 1;
+        reconnectTimeout = setTimeout(connect, delay);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
 
       wsRef.current = ws;
     }

@@ -189,3 +189,20 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=0, minute=5),  # 00:05 UTC
     },
 }
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "apps": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}

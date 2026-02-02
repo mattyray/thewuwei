@@ -12,6 +12,7 @@ from typing import Annotated, Any
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
@@ -159,7 +160,7 @@ class AgentState(TypedDict):
 # --- Graph nodes ---
 
 
-def call_model(state: AgentState, config: dict) -> dict:
+def call_model(state: AgentState, config: RunnableConfig) -> dict:
     """Call Claude with the current conversation and tool definitions."""
     model_name = config.get("configurable", {}).get(
         "model", "claude-sonnet-4-20250514"
@@ -179,7 +180,7 @@ def call_model(state: AgentState, config: dict) -> dict:
     return {"messages": [response]}
 
 
-def execute_tools(state: AgentState, config: dict) -> dict:
+def execute_tools(state: AgentState, config: RunnableConfig) -> dict:
     """Execute tool calls from the model's response."""
     user = config.get("configurable", {}).get("user")
     last_message = state["messages"][-1]
