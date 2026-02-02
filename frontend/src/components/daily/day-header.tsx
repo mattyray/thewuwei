@@ -68,30 +68,39 @@ export function DayHeader({
   const fullDate = formatFullDate(date);
   const summaryLine = buildSummaryLine(summary);
 
+  // Today gets a prominent heading, not a collapsible button
+  if (isToday) {
+    return (
+      <div className="py-1">
+        <h2 className="text-xl font-bold text-text-primary">{label}</h2>
+        <p className="text-sm text-text-secondary">{fullDate}</p>
+      </div>
+    );
+  }
+
+  // Past days get a collapsible toggle
   return (
     <button
       onClick={onToggle}
       className="flex w-full items-center gap-3 py-2 text-left"
     >
-      {!isToday && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className={`h-4 w-4 shrink-0 text-text-muted transition-transform ${
-            isExpanded ? "rotate-90" : ""
-          }`}
-        >
-          <path
-            fillRule="evenodd"
-            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-            clipRule="evenodd"
-          />
-        </svg>
-      )}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        className={`h-4 w-4 shrink-0 text-text-muted transition-transform ${
+          isExpanded ? "rotate-90" : ""
+        }`}
+      >
+        <path
+          fillRule="evenodd"
+          d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+          clipRule="evenodd"
+        />
+      </svg>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
-          <span className="text-sm font-semibold uppercase tracking-wider text-text-muted">
+          <span className="text-sm font-semibold text-text-primary">
             {label}
           </span>
           <span className="text-xs text-text-muted">{fullDate}</span>

@@ -24,8 +24,12 @@ export function DaySection({
 }: DaySectionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
+  const hasGratitude = summary.gratitude && summary.gratitude.items.length > 0;
+  const hasJournal = !!summary.journal;
+  const hasTodos = summary.todos.length > 0 || isToday;
+
   return (
-    <div className="border-t border-border pt-4">
+    <div>
       <DayHeader
         date={summary.date}
         isToday={isToday}
@@ -37,13 +41,38 @@ export function DaySection({
       />
 
       {(isToday || expanded) && (
-        <div className="mt-3 space-y-5">
-          <MeditationRow checkin={summary.checkin} />
-          <GratitudeSection gratitude={summary.gratitude} />
-          <JournalSection journal={summary.journal} />
-          <TodosSection todos={summary.todos} isToday={isToday} />
-          {!isToday && (
-            <ChatTranscript messages={summary.chat_messages} />
+        <div className="mt-3 space-y-3">
+          {/* Meditation card */}
+          <div className="rounded-xl bg-bg-secondary p-4">
+            <MeditationRow checkin={summary.checkin} />
+          </div>
+
+          {/* Gratitude card */}
+          {hasGratitude && (
+            <div className="rounded-xl bg-bg-secondary p-4">
+              <GratitudeSection gratitude={summary.gratitude} />
+            </div>
+          )}
+
+          {/* Journal card */}
+          {hasJournal && (
+            <div className="rounded-xl bg-bg-secondary p-4">
+              <JournalSection journal={summary.journal} />
+            </div>
+          )}
+
+          {/* Todos card */}
+          {hasTodos && (
+            <div className="rounded-xl bg-bg-secondary p-4">
+              <TodosSection todos={summary.todos} isToday={isToday} />
+            </div>
+          )}
+
+          {/* Chat transcript for past days */}
+          {!isToday && summary.chat_messages.length > 0 && (
+            <div className="rounded-xl bg-bg-secondary p-4">
+              <ChatTranscript messages={summary.chat_messages} />
+            </div>
           )}
         </div>
       )}

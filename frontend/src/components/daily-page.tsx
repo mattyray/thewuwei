@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessageBubble } from "@/components/chat/chat-message";
@@ -14,14 +14,11 @@ export function DailyPage() {
     useChat();
   const { data: todaySummary, isLoading: summaryLoading } = useTodaySummary();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [chatOpen, setChatOpen] = useState(false);
 
-  // Auto-open chat and scroll when new messages arrive from this session
+  // Scroll to bottom when new messages arrive
   const prevMsgCount = useRef(0);
   useEffect(() => {
     if (messages.length > prevMsgCount.current && prevMsgCount.current > 0) {
-      // New message arrived during this session — open chat and scroll
-      setChatOpen(true);
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
@@ -31,12 +28,12 @@ export function DailyPage() {
 
   // Also scroll when waiting indicator appears
   useEffect(() => {
-    if (isWaiting && chatOpen) {
+    if (isWaiting) {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     }
-  }, [isWaiting, chatOpen]);
+  }, [isWaiting]);
 
   const hasNoContent =
     historyLoaded &&
@@ -64,7 +61,7 @@ export function DailyPage() {
             </div>
           )}
 
-          {/* Today's structured sections — always first */}
+          {/* Today's structured sections */}
           {todaySummary && (
             <DaySection
               summary={todaySummary}
@@ -73,54 +70,29 @@ export function DailyPage() {
             />
           )}
 
-          {/* Today's conversation — collapsible */}
+          {/* Today's conversation — always visible */}
           {messages.length > 0 && (
-            <div className="border-t border-border pt-4">
-              <button
-                onClick={() => setChatOpen(!chatOpen)}
-                className="flex w-full items-center gap-2 text-left"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className={`h-4 w-4 shrink-0 text-text-muted transition-transform ${
-                    chatOpen ? "rotate-90" : ""
-                  }`}
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span className="text-sm font-semibold uppercase tracking-wider text-text-muted">
-                  Conversation
-                </span>
-                <span className="text-xs text-text-muted">
-                  ({messages.length} message{messages.length !== 1 ? "s" : ""})
-                </span>
-              </button>
-
-              {chatOpen && (
-                <div className="mt-3 space-y-3">
-                  {messages.map((msg, i) => (
-                    <ChatMessageBubble key={i} message={msg} />
-                  ))}
-                  {isWaiting && (
-                    <div className="flex justify-start">
-                      <div className="rounded-2xl rounded-bl-md bg-bg-secondary px-4 py-2.5">
-                        <div className="flex gap-1">
-                          <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted [animation-delay:-0.3s]" />
-                          <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted [animation-delay:-0.15s]" />
-                          <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted" />
-                        </div>
+            <div>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Conversation
+              </h3>
+              <div className="space-y-3">
+                {messages.map((msg, i) => (
+                  <ChatMessageBubble key={i} message={msg} />
+                ))}
+                {isWaiting && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl rounded-bl-md bg-bg-secondary px-4 py-2.5">
+                      <div className="flex gap-1">
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted [animation-delay:-0.3s]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted [animation-delay:-0.15s]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted" />
                       </div>
                     </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
           )}
 
@@ -133,10 +105,7 @@ export function DailyPage() {
       <div className="shrink-0 border-t border-border bg-bg-primary/95 backdrop-blur-sm">
         <div className="mx-auto max-w-3xl">
           <ChatInput
-            onSend={(content) => {
-              setChatOpen(true);
-              sendMessage(content);
-            }}
+            onSend={(content) => sendMessage(content)}
             disabled={isWaiting || !isConnected}
           />
           {!isConnected && (
