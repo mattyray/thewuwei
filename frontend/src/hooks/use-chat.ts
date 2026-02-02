@@ -3,16 +3,44 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { getMessagesByDate } from "@/lib/api/chat-messages";
 import type { ChatMessage } from "@/types/api";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+
+function getTodayDateString(): string {
+  const d = new Date();
+  return d.toISOString().split("T")[0];
+}
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isWaiting, setIsWaiting] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const queryClient = useQueryClient();
+
+  // Load persisted messages for today on mount
+  useEffect(() => {
+    let cancelled = false;
+    getMessagesByDate(getTodayDateString())
+      .then((persisted) => {
+        if (cancelled) return;
+        if (persisted.length > 0) {
+          setMessages(
+            persisted.map((m) => ({ role: m.role, content: m.content }))
+          );
+        }
+        setHistoryLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) setHistoryLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let retries = 0;
@@ -45,6 +73,7 @@ export function useChat() {
           queryClient.invalidateQueries({ queryKey: ["todos"] });
           queryClient.invalidateQueries({ queryKey: ["mantras"] });
           queryClient.invalidateQueries({ queryKey: ["gratitude"] });
+          queryClient.invalidateQueries({ queryKey: ["daily"] });
         }
       };
 
@@ -85,5 +114,5 @@ export function useChat() {
     wsRef.current.send(JSON.stringify({ type: "message", content }));
   }, []);
 
-  return { messages, sendMessage, isConnected, isWaiting };
+  return { messages, sendMessage, isConnected, isWaiting, historyLoaded };
 }

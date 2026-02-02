@@ -64,3 +64,17 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
+
+export interface PersistedChatMessage extends ChatMessage {
+  id: number;
+  created_at: string;
+}
+
+export interface DailySummary {
+  date: string; // YYYY-MM-DD
+  checkin: DailyCheckin | null;
+  journal: JournalEntry | null;
+  gratitude: GratitudeEntry | null;
+  todos: Todo[];
+  chat_messages: PersistedChatMessage[];
+}
