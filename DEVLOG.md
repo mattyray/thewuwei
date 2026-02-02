@@ -375,4 +375,38 @@ The design conversation with the user drove every decision: they look back at re
 
 ---
 
+## 2026-02-02 — Visual Hierarchy Overhaul `#architecture` `#ai-pairing`
+
+### What happened
+- Overhauled the daily page layout to fix visual hierarchy problems identified in a design review
+- Removed collapsible conversation toggle — chat messages now always visible inline
+- Wrapped each structured section (meditation, gratitude, journal, todos) in distinct card containers (`rounded-xl bg-bg-secondary p-4`)
+- Made "Today" header prominent (`text-xl font-bold`) instead of the same muted label as past days
+- Added centered "Previous Days" divider with horizontal rules between today's content and the recent days feed
+- Added mobile navigation row below header — Today/Mantras/Settings now visible on all screen sizes
+- Past day headers now use `text-text-primary` for better contrast vs muted labels
+
+### Problems this solved
+
+**Everything looked the same:** Every section — meditation, gratitude, journal, todos, conversation, past days — used identical `text-sm font-semibold uppercase tracking-wider text-text-muted` labels. Nothing had more visual weight than anything else. Card containers give each section its own visual boundary.
+
+**Conversation hidden behind toggle:** The chat was supposed to be the primary interface, but its history was collapsed behind a toggle on the main page. Removing the toggle makes chat messages always visible — consistent with the "chat IS the app" philosophy.
+
+**No separation between today and history:** The recent days feed (5 past days) was just more of the same content below today's sections with no divider. The centered "Previous Days" heading creates a clear visual break.
+
+**Mobile navigation missing:** Nav links (Today/Mantras/Settings) were `hidden sm:flex`, invisible on phones. Added a second nav row that shows on small screens.
+
+### Design decisions
+
+**Cards at section level, not day level:** Each data type (meditation, gratitude, journal, todos, chat transcript) gets its own card rather than one big card per day. This creates visual rhythm and makes individual sections scannable. The trade-off is more visual "boxes" on screen, but each one reads as a distinct item rather than a wall of text.
+
+**Today header as `h2` vs label:** Past days use a collapsible button with `text-sm font-semibold text-text-primary`. Today uses `text-xl font-bold` — an actual heading. This immediately tells you "this is the current day" without reading the text.
+
+**Conditional card rendering:** Cards only render when they have content (gratitude shows only if items exist, journal only if written). This keeps the page clean for partial days — if you've only meditated, you see one card, not four empty ones.
+
+### Key insight
+> Visual hierarchy isn't about making things pretty — it's about information architecture. When every element has the same visual weight, the user has to read everything to find what matters. Cards, headings, and dividers create a scannable structure that matches how the user actually uses the app: glance at today's status, scroll to chat, occasionally look at past days.
+
+---
+
 <!-- New entries will be added above this line -->
