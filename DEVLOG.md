@@ -302,4 +302,30 @@ allauth's Google provider requires `PyJWT[crypto]` for JWT token verification �
 
 ---
 
+## 2026-02-02 — Daily Page Restructure: Chat Messages REST API `#architecture` `#tdd`
+
+### What happened
+- Designed and began implementing a major frontend restructure: from chat+sidebar layout to a "daily page" concept
+- First step: added REST API for chat messages (previously only accessible via WebSocket)
+- Created serializer, read-only viewset with date-based filtering, URL routing
+- Wrote 11 tests covering CRUD restrictions, date filtering, auth, and multi-tenancy
+
+### Why this change
+The original dashboard was a split layout (chat left, panels right) that broke on mobile and had no way to review past days. The new design treats each day as a self-contained page — chat transcript, journal entry, gratitude list, meditation status, and todos all visible for any date. Past days appear below today as a scrollable feed for quick reference. This aligns with the user's actual workflow: they look back at recent days to see what they missed before planning today.
+
+### New endpoints
+- `GET /api/chat-messages/` — paginated list of all messages
+- `GET /api/chat-messages/{YYYY-MM-DD}/` — messages for a specific date
+
+### Design decision: read-only API
+Chat messages are created exclusively through the WebSocket consumer. The REST API is read-only (no POST/DELETE). This preserves the single source of truth for message creation while enabling the new daily page to display chat history.
+
+### What the tests proved
+- Messages are properly scoped to authenticated user (multi-tenancy)
+- Date filtering works correctly (only returns messages with matching `created_at__date`)
+- POST/DELETE return 405 (read-only enforced)
+- Empty dates return 200 with empty list (not 404)
+
+---
+
 <!-- New entries will be added above this line -->
