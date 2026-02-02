@@ -326,6 +326,24 @@ Chat messages are created exclusively through the WebSocket consumer. The REST A
 - POST/DELETE return 405 (read-only enforced)
 - Empty dates return 200 with empty list (not 404)
 
+### Tests: 197 passing (30 new)
+- 11 chat API tests
+- 15 daily summary tests
+- 4 date filter tests (todos + gratitude)
+
+---
+
+## 2026-02-02 — Agent Smart Parsing `#langgraph` `#ai-pairing`
+
+### What happened
+- Updated agent system prompt to instruct smart parsing of rambling input
+- Todos: agent now calls `create_todo` separately for each task mentioned in a stream-of-consciousness message
+- Gratitude: agent parses rambling into clean individual items, stripping filler words
+- Journal: explicitly left as-is (user's natural voice is the point)
+
+### Why this matters
+The whole app premise is "just talk to it." If a user says "I need to call the doctor and pick up groceries oh and text Krystle", the old behavior might create one big todo. The new prompt instructs the agent to parse that into 3 clean items. Same for gratitude — "grateful for good sleep, my caregivers, coffee" becomes `["good sleep", "my caregivers", "coffee"]`. This makes the structured output on the daily page actually useful to read back.
+
 ---
 
 <!-- New entries will be added above this line -->
