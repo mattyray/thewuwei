@@ -9,8 +9,9 @@ Handles:
 5. Persisting chat history
 """
 
-import json
+import asyncio
 import logging
+import os
 import traceback
 
 from channels.db import database_sync_to_async
@@ -20,6 +21,8 @@ from .models import ChatMessage
 
 logger = logging.getLogger(__name__)
 
+AGENT_TIMEOUT = 120  # seconds
+
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
 
@@ -27,13 +30,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         self.user = self.scope.get("user")
 
         if not self.user or not self.user.is_authenticated:
+            logger.warning("WS rejected: anonymous user")
             await self.close()
             return
 
+        logger.info("WS connected: user=%s", self.user.email)
         await self.accept()
 
     async def disconnect(self, close_code):
-        pass
+        logger.info("WS disconnected: code=%s", close_code)
 
     async def receive_json(self, content):
         message_type = content.get("type")
@@ -44,23 +49,36 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if not user_content:
             return
 
+        logger.info("WS message from %s: %s", self.user.email, user_content[:100])
+
         # Save user message
         await self.save_message("user", user_content)
 
         try:
-            # Get agent response
-            response_text = await self.get_agent_response(user_content)
+            # Get agent response with timeout
+            response_text = await asyncio.wait_for(
+                self.get_agent_response(user_content),
+                timeout=AGENT_TIMEOUT,
+            )
 
             # Save assistant message
             await self.save_message("assistant", response_text)
+
+            logger.info("WS response to %s: %s", self.user.email, response_text[:100])
 
             # Send complete response
             await self.send_json({
                 "type": "complete",
                 "content": response_text,
             })
+        except asyncio.TimeoutError:
+            logger.error("Agent timed out after %ss for user %s", AGENT_TIMEOUT, self.user.email)
+            await self.send_json({
+                "type": "complete",
+                "content": "Sorry, the request timed out. Please try again.",
+            })
         except Exception as e:
-            logger.error("Agent error: %s\n%s", e, traceback.format_exc())
+            logger.error("Agent error for %s: %s\n%s", self.user.email, e, traceback.format_exc())
             await self.send_json({
                 "type": "complete",
                 "content": f"Sorry, something went wrong: {e}",
@@ -72,8 +90,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         This method is designed to be easily mocked in tests.
         In production, it invokes the full agent graph.
         """
-        from apps.agent.graph import agent
-
         result = await database_sync_to_async(self._run_agent)(user_message)
         return result
 
@@ -83,12 +99,17 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         from apps.agent.graph import agent
 
+        # Use user's API key if set, otherwise fall back to env var
+        api_key = self.user.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY")
+
         config = {
             "configurable": {
                 "user": self.user,
-                "anthropic_api_key": self.user.anthropic_api_key or None,
+                "anthropic_api_key": api_key,
             }
         }
+
+        logger.info("Invoking agent for %s (key=%s...)", self.user.email, api_key[:10] if api_key else "NONE")
 
         result = agent.invoke(
             {"messages": [HumanMessage(content=user_message)]},

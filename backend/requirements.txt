@@ -45,5 +45,8 @@ black==26.1.0
 isort==7.0.0
 flake8==7.3.0
 
+# ASGI server (dev with auto-reload)
+uvicorn[standard]==0.34.0
+
 # Utils
 python-dotenv==1.2.1
