@@ -4,7 +4,7 @@ TDD: Todos API Tests
 Tests for todo CRUD and multi-tenancy at the API level.
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from rest_framework.test import APIClient
@@ -73,6 +73,23 @@ class TestTodoAPI:
         response = auth_client.delete(f"/api/todos/{todo.pk}/")
         assert response.status_code == 204
         assert Todo.objects.filter(pk=todo.pk).count() == 0
+
+    def test_filter_todos_by_date(self, auth_client, user, today):
+        todo_today = Todo.objects.create(user=user, task="Today task")
+        todo_old = Todo.objects.create(user=user, task="Old task")
+        Todo.objects.filter(pk=todo_old.pk).update(
+            created_at=todo_old.created_at - timedelta(days=1)
+        )
+
+        response = auth_client.get(f"/api/todos/?date={today}")
+        assert len(response.data["results"]) == 1
+        assert response.data["results"][0]["task"] == "Today task"
+
+    def test_no_date_filter_returns_all(self, auth_client, user):
+        Todo.objects.create(user=user, task="Task 1")
+        Todo.objects.create(user=user, task="Task 2")
+        response = auth_client.get("/api/todos/")
+        assert len(response.data["results"]) == 2
 
 
 class TestTodoMultiTenancy:

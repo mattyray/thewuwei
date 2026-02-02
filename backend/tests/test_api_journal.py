@@ -205,6 +205,27 @@ class TestGratitudeAPI:
         assert response.status_code == 200
         assert len(response.data["results"]) == 2
 
+    def test_filter_gratitude_by_date(self, auth_client, user):
+        GratitudeEntry.objects.create(
+            user=user, date=date(2026, 1, 1), items=["a"]
+        )
+        GratitudeEntry.objects.create(
+            user=user, date=date(2026, 1, 2), items=["b"]
+        )
+        response = auth_client.get("/api/gratitude/?date=2026-01-01")
+        assert len(response.data["results"]) == 1
+        assert response.data["results"][0]["items"] == ["a"]
+
+    def test_no_date_filter_returns_all_gratitude(self, auth_client, user):
+        GratitudeEntry.objects.create(
+            user=user, date=date(2026, 1, 1), items=["a"]
+        )
+        GratitudeEntry.objects.create(
+            user=user, date=date(2026, 1, 2), items=["b"]
+        )
+        response = auth_client.get("/api/gratitude/")
+        assert len(response.data["results"]) == 2
+
     def test_gratitude_scoped_to_user(self, auth_client, other_user):
         GratitudeEntry.objects.create(
             user=other_user, date=date.today(), items=["secret"]

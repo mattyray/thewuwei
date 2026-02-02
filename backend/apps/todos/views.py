@@ -12,7 +12,11 @@ class TodoViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Todo.objects.filter(user=self.request.user)
+        qs = Todo.objects.filter(user=self.request.user)
+        date_param = self.request.query_params.get("date")
+        if date_param:
+            qs = qs.filter(created_at__date=date_param)
+        return qs
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):

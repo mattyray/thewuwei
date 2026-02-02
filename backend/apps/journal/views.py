@@ -84,7 +84,11 @@ class GratitudeViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return GratitudeEntry.objects.filter(user=self.request.user)
+        qs = GratitudeEntry.objects.filter(user=self.request.user)
+        date_param = self.request.query_params.get("date")
+        if date_param:
+            qs = qs.filter(date=date_param)
+        return qs
 
     @action(detail=False, methods=["get"], url_path="today")
     def today(self, request):
